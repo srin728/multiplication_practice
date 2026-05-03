@@ -84,13 +84,39 @@
       margin-bottom: 15px;
     }
 
-    /* Start Screen */
+    /* Start Screen - Digit Selectors */
+    .digit-selectors {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .digit-selectors div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .digit-selectors label {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .digit-selectors span {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
     input[type="number"] {
-      width: 100%;
+      width: 80px;
       padding: 10px;
       font-size: 1.2rem;
+      text-align: center;
       box-sizing: border-box;
-      margin-bottom: 15px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
@@ -203,8 +229,20 @@
   <div class="container">
     <div id="start-screen" class="screen active">
       <h1>Multiplication Training</h1>
-      <p>Select the maximum number of digits</p>
-      <input type="number" id="level-input" value="1" min="1" max="5">
+      <p>Select the number of digits</p>
+      
+      <div class="digit-selectors">
+        <div>
+          <label for="level-input-1">Left</label>
+          <input type="number" id="level-input-1" value="1" min="1" max="5">
+        </div>
+        <span>×</span>
+        <div>
+          <label for="level-input-2">Right</label>
+          <input type="number" id="level-input-2" value="2" min="1" max="5">
+        </div>
+      </div>
+
       <button class="btn" onclick="startGame()">Start</button>
     </div>
 
@@ -251,7 +289,8 @@
   <script>
     // State Variables
     const TOTAL_QUESTIONS = 20;
-    let currentLevel = 1;
+    let currentLevel1 = 1;
+    let currentLevel2 = 2;
     let currentQuestionNum = 0;
     let currentAnswer = 0;
     let timeRecords = [];
@@ -270,7 +309,8 @@
       result: document.getElementById('result-screen')
     };
     const ui = {
-      levelInput: document.getElementById('level-input'),
+      levelInput1: document.getElementById('level-input-1'),
+      levelInput2: document.getElementById('level-input-2'),
       counter: document.getElementById('question-counter'),
       stopwatch: document.getElementById('stopwatch'),
       questionText: document.getElementById('question-text'),
@@ -293,13 +333,23 @@
     }
 
     function startGame() {
-      currentLevel = Math.min(5, Math.max(1, parseInt(ui.levelInput.value) || 1));
-      ui.levelInput.value = currentLevel; 
+      // 左右の桁数を取得
+      currentLevel1 = Math.min(5, Math.max(1, parseInt(ui.levelInput1.value) || 1));
+      currentLevel2 = Math.min(5, Math.max(1, parseInt(ui.levelInput2.value) || 1));
+      ui.levelInput1.value = currentLevel1; 
+      ui.levelInput2.value = currentLevel2;
       
       currentQuestionNum = 0;
       timeRecords = [];
       showScreen('play');
       nextQuestion();
+    }
+
+    function generateNumber(digits) {
+      // 指定された桁数にぴったり合う数字を生成する（例: 2桁なら10〜99）
+      const min = digits === 1 ? 1 : Math.pow(10, digits - 1);
+      const max = Math.pow(10, digits) - 1;
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     function nextQuestion() {
@@ -316,9 +366,9 @@
       
       state = "input";
 
-      const maxNum = Math.pow(10, currentLevel) - 1;
-      const num1 = Math.floor(Math.random() * maxNum) + 1;
-      const num2 = Math.floor(Math.random() * maxNum) + 1;
+      // 左と右それぞれの指定桁数でランダムな数値を生成
+      const num1 = generateNumber(currentLevel1);
+      const num2 = generateNumber(currentLevel2);
       
       currentAnswer = num1 * num2;
       ui.questionText.textContent = `${num1} × ${num2}`;
@@ -335,7 +385,8 @@
 
     function inputNumber(num) {
       if (state !== "input") return;
-      if (ui.userInput.textContent.length >= 7) return; 
+      // 5桁×5桁の最大文字数は10桁のため、制限を緩める
+      if (ui.userInput.textContent.length >= 10) return; 
       
       ui.userInput.textContent += num;
       ui.questionText.className = 'question-box'; 
@@ -402,10 +453,9 @@
       ui.averageTime.textContent = `Average Time: ${avgTime.toFixed(2)} sec`;
     }
 
-    // タイマーを止めて確実に初期画面へ戻る
     function returnToTitle() {
       stopTimer();
-      state = "input"; // 状態をリセット
+      state = "input"; 
       showScreen('start');
     }
 
